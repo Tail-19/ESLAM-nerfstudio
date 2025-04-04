@@ -49,6 +49,8 @@ import torch.nn.functional as F
 from src.common import as_intrinsics_matrix
 from torch.utils.data import Dataset, Sampler
 
+import re
+
 class SeqSampler(Sampler):
     """
     Sample a sequence of frames from a dataset.
@@ -96,6 +98,7 @@ class BaseDataset(Dataset):
         return self.n_img
 
     def __getitem__(self, index):
+        # print(self.color_paths)
         color_path = self.color_paths[index]
         depth_path = self.depth_paths[index]
         color_data = cv2.imread(color_path)
@@ -138,11 +141,21 @@ class Replica(BaseDataset):
                  ):
         super(Replica, self).__init__(cfg, args, scale, device)
         self.color_paths = sorted(
-            glob.glob(f'{self.input_folder}/results/frame*.jpg'))
+            glob.glob(f'{self.input_folder}/rgb/*.png'), key=self.sort_key) #HANLU: Changed path and image format
+            # glob.glob(f'{self.input_folder}/results/frame*.jpg'))
         self.depth_paths = sorted(
-            glob.glob(f'{self.input_folder}/results/depth*.png'))
+            glob.glob(f'{self.input_folder}/depth/*.png'), key=self.sort_key)
+            # glob.glob(f'{self.input_folder}/results/depth*.png'))
         self.n_img = len(self.color_paths)
         self.load_poses(f'{self.input_folder}/traj.txt')
+
+    def sort_key(self, filepath):
+        base_name = os.path.basename(filepath)
+        num = re.findall(r'\d+', base_name)
+        if num:
+            return int(num[0])
+        else:
+            return base_name
 
     def load_poses(self, path):
         self.poses = []

@@ -226,7 +226,10 @@ class Mesher(object):
 
             z = []
             mask = []
+            print('Evaluating points...', 'Total point batches:', points.shape[0]/self.points_batch_size)
             for i, pnts in enumerate(torch.split(points, self.points_batch_size, dim=0)):
+                # print('Batch:', i)
+                # print('Points:', pnts.shape)
                 mask.append(mesh_bound.contains(pnts.cpu().numpy()))
             mask = np.concatenate(mask, axis=0)
 

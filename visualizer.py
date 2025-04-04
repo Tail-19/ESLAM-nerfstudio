@@ -73,6 +73,7 @@ if __name__ == '__main__':
         wait_time = 0.1
     output = cfg['data']['output'] if args.output is None else args.output
     ckptsdir = f'{output}/ckpts'
+    print(ckptsdir)
     if os.path.exists(ckptsdir):
         ckpts = [os.path.join(ckptsdir, f) for f in sorted(os.listdir(ckptsdir)) if 'tar' in f]
         if len(ckpts) > 0:

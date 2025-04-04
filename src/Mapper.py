@@ -422,7 +422,7 @@ class Mapper(object):
                 print(Style.RESET_ALL)
 
             _, gt_color, gt_depth, gt_c2w = next(data_iterator)
-            gt_color = gt_color.squeeze(0).to(self.device, non_blocking=True)
+            gt_color = gt_color.squeeze(0).to(self.device, non_blocking=True) # squeeze to remove batch dimension
             gt_depth = gt_depth.squeeze(0).to(self.device, non_blocking=True)
             gt_c2w = gt_c2w.squeeze(0).to(self.device, non_blocking=True)
 

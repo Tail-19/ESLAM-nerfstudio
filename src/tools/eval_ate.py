@@ -331,3 +331,5 @@ if __name__ == '__main__':
             poses_est, _ = convert_poses(estimate_c2w_list, N, scale)
             poses_est = poses_est[mask]
             evaluate(poses_gt, poses_est, plot=f'{output}/eval_ate_plot.png')
+
+            
