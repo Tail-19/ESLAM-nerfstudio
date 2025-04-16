@@ -101,23 +101,21 @@ class Renderer(object):
         n_importance = self.n_importance
         n_rays = rays_o.shape[0]
 
-        z_vals = torch.empty([n_rays, n_stratified + n_importance], device=device)
+        z_vals = torch.empty([n_rays, n_stratified + n_importance], device=device) 
         near = 0.0
-        t_vals_uni = torch.linspace(0., 1., steps=n_stratified, device=device)
-        t_vals_surface = torch.linspace(0., 1., steps=n_importance, device=device)
+        #linespace: 均匀采样
+        t_vals_uni = torch.linspace(0., 1., steps=n_stratified, device=device) # 均匀采样
+        t_vals_surface = torch.linspace(0., 1., steps=n_importance, device=device) # importance sampling
 
         ### pixels with gt depth:
         gt_depth = gt_depth.reshape(-1, 1)
-        gt_mask = (gt_depth > 0).squeeze()
+        gt_mask = (gt_depth > 0).squeeze() #squeeze: 去除大小为1的维度
         gt_nonezero = gt_depth[gt_mask]
-
         ## Sampling points around the gt depth (surface)
-        gt_depth_surface = gt_nonezero.expand(-1, n_importance)
+        gt_depth_surface = gt_nonezero.expand(-1, n_importance) 
         z_vals_surface = gt_depth_surface - (1.5 * truncation)  + (3 * truncation * t_vals_surface)
-
         gt_depth_free = gt_nonezero.expand(-1, n_stratified)
         z_vals_free = near + 1.2 * gt_depth_free * t_vals_uni
-
         z_vals_nonzero, _ = torch.sort(torch.cat([z_vals_free, z_vals_surface], dim=-1), dim=-1)
         if self.perturb:
             z_vals_nonzero = self.perturbation(z_vals_nonzero)
@@ -152,6 +150,10 @@ class Renderer(object):
                 z_vals_uni, ind = torch.sort(torch.cat([z_vals_uni, z_samples_uni], -1), -1)
                 z_vals[~gt_mask] = z_vals_uni
 
+        # 根据z_vals采样点云: 
+        # rays_o[..., None, :] + rays_d[..., None, :] * z_vals[..., :, None] 
+        # 表示从ray_o出发,沿着ray_d方向,采样z_vals个点
+        # 得到的结果是一个形状为(n_rays, n_stratified+n_importance, 3)的张量, 表示采样点云的坐标
         pts = rays_o[..., None, :] + rays_d[..., None, :] * \
               z_vals[..., :, None]  # [n_rays, n_stratified+n_importance, 3]
 

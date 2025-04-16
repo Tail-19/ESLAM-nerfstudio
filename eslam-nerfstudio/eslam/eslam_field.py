@@ -14,15 +14,6 @@ from nerfstudio.fields.base_field import Field  # for custom Field
 
 
 class ESLAMNerfField(NerfactoField):
-    """ESLAM Field
-
-    Args:
-        aabb: parameters of scene aabb bounds
-        num_images: number of images in the dataset
-    """
-
-    aabb: Tensor
-
     def __init__(
         self,
         aabb: Tensor,

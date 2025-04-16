@@ -122,10 +122,15 @@ def select_uv(i, j, n, b, depths, colors, device='cuda:0'):
     Select n uv from dense uv.
 
     """
+    # 将i,j展平
     i = i.reshape(-1)
     j = j.reshape(-1)
+    # 随机选择n*b个像素 i.shape[0]是i的元素个数, (n * b,)表示生成一个形状为(n * b,)的随机整数张量,  
+    # 这个张量中的每个元素是从0到i.shape[0]-1的随机整数 
     indices = torch.randint(i.shape[0], (n * b,), device=device)
+    # 将indices限制在0到i.shape[0]之间
     indices = indices.clamp(0, i.shape[0])
+    # 根据indices选择i,j中的元素
     i = i[indices]  # (n * b)
     j = j[indices]  # (n * b)
 
@@ -148,13 +153,15 @@ def get_sample_uv(H0, H1, W0, W1, n, b, depths, colors, device='cuda:0'):
     """
     depths = depths[:, H0:H1, W0:W1]
     colors = colors[:, H0:H1, W0:W1]
-
+    # create a grid of pixel coordinates
+    # torch.linspace: returns a tensor of evenly spaced numbers over a specified interval
+    # torch.meshgrid: returns a tensor of coordinates from two tensors
     i, j = torch.meshgrid(torch.linspace(W0, W1 - 1, W1 - W0, device=device), torch.linspace(H0, H1 - 1, H1 - H0, device=device))
-
+    # 得到的i,j是两个形状为(H1-H0, W1-W0)的矩阵，表示图像中每个像素的坐标, 坐标的范围是[W0, W1-1]和[H0, H1-1]
     i = i.t()  # transpose
     j = j.t()
     i, j, depth, color = select_uv(i, j, n, b, depths, colors, device=device)
-
+    
     return i, j, depth, color
 
 def get_samples(H0, H1, W0, W1, n, H, W, fx, fy, cx, cy, c2ws, depths, colors, device):

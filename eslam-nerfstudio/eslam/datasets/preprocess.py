@@ -526,41 +526,41 @@ def process_iphone_scene(data: Path, output_dir: Path, num_frames: int = 200):
 #     scenefun3d_to_json(copied_image_paths, traj_path, output_dir, indices=idx)
 
 
-  def TrajStringToMatrix(self, traj_str):
-      """ 
-      Converts a line from the camera trajectory file into translation and rotation matrices.
+#     def TrajStringToMatrix(self, traj_str):
+#       """ 
+#       Converts a line from the camera trajectory file into translation and rotation matrices.
 
-      Args:
-          traj_str (str): A space-delimited string where each line represents a camera pose at a particular timestamp. 
-                          The line consists of seven columns:
-              - Column 1: timestamp
-              - Columns 2-4: rotation (axis-angle representation in radians)
-              - Columns 5-7: translation (in meters)
+#       Args:
+#           traj_str (str): A space-delimited string where each line represents a camera pose at a particular timestamp. 
+#                           The line consists of seven columns:
+#               - Column 1: timestamp
+#               - Columns 2-4: rotation (axis-angle representation in radians)
+#               - Columns 5-7: translation (in meters)
 
-      Returns:
-          (tuple): A tuple containing:
-              - ts (str): Timestamp.
-              - Rt (numpy.ndarray): 4x4 transformation matrix representing rotation and translation.
+#       Returns:
+#           (tuple): A tuple containing:
+#               - ts (str): Timestamp.
+#               - Rt (numpy.ndarray): 4x4 transformation matrix representing rotation and translation.
 
-      Raises:
-          AssertionError: If the input string does not have exactly seven columns.
-      """
-      tokens = traj_str.split()
-      assert len(tokens) == 7
-      ts = tokens[0]
+#       Raises:
+#           AssertionError: If the input string does not have exactly seven columns.
+#       """
+#       tokens = traj_str.split()
+#       assert len(tokens) == 7
+#       ts = tokens[0]
 
-      # Rotation in angle axis
-      angle_axis = [float(tokens[1]), float(tokens[2]), float(tokens[3])]
-      r_w_to_p = convert_angle_axis_to_matrix3(np.asarray(angle_axis))
+#       # Rotation in angle axis
+#       angle_axis = [float(tokens[1]), float(tokens[2]), float(tokens[3])]
+#       r_w_to_p = convert_angle_axis_to_matrix3(np.asarray(angle_axis))
 
-      # Translation
-      t_w_to_p = np.asarray([float(tokens[4]), float(tokens[5]), float(tokens[6])])
-      extrinsics = np.eye(4, 4)
-      extrinsics[:3, :3] = r_w_to_p
-      extrinsics[:3, -1] = t_w_to_p
-      Rt = np.linalg.inv(extrinsics)
+#       # Translation
+#       t_w_to_p = np.asarray([float(tokens[4]), float(tokens[5]), float(tokens[6])])
+#       extrinsics = np.eye(4, 4)
+#       extrinsics[:3, :3] = r_w_to_p
+#       extrinsics[:3, -1] = t_w_to_p
+#       Rt = np.linalg.inv(extrinsics)
 
-      return (ts, Rt)
+#       return (ts, Rt)
 
 
 def main(dataset_name: str, data_dir: str, num_frames: int = 200) -> None:
@@ -576,10 +576,9 @@ def main(dataset_name: str, data_dir: str, num_frames: int = 200) -> None:
         scene_names = ['desk', 'people', 'spot']  # example scenes
         process_scene = process_iphone_scene
     
-    data_dir = data_dir.rstrip('/') # remove '/' at end if exists
     for scene_name in scene_names:
-      data = f'data_dir/{dataset_name}/{scene_name}'
-      output_dir = f'data_dir/nerfstudio/{dataset_name}/{scene_name}'
+      data = f'{data_dir}}/{dataset_name}/{scene_name}'
+      output_dir = f'{data_dir}/nerfstudio/{dataset_name}/{scene_name}'
       process_scene(Path(data), Path(output_dir), num_frames)
 
 if __name__ == "__main__":

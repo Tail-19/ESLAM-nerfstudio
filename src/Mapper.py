@@ -396,8 +396,8 @@ class Mapper(object):
         cfg = self.cfg
         all_planes = (self.planes_xy, self.planes_xz, self.planes_yz, self.c_planes_xy, self.c_planes_xz, self.c_planes_yz)
         idx, gt_color, gt_depth, gt_c2w = self.frame_reader[0]
-        data_iterator = iter(self.frame_loader)
-
+        data_iterator = iter(self.frame_loader) 
+        
         ## Fixing the first camera pose
         self.estimate_c2w_list[0] = gt_c2w
 
@@ -421,6 +421,7 @@ class Mapper(object):
                 print("Mapping Frame ", idx.item())
                 print(Style.RESET_ALL)
 
+            
             _, gt_color, gt_depth, gt_c2w = next(data_iterator)
             gt_color = gt_color.squeeze(0).to(self.device, non_blocking=True) # squeeze to remove batch dimension
             gt_depth = gt_depth.squeeze(0).to(self.device, non_blocking=True)

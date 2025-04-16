@@ -10,7 +10,7 @@ from typing import Dict, Literal, Tuple, Type, Union, Optional
 import torch
 import numpy as np
 from pathlib import Path
-
+from eslam.image_encoder import BaseImageEncoder
 from nerfstudio.cameras.rays import RayBundle
 from nerfstudio.data.datamanagers.base_datamanager import (
     VanillaDataManager,
@@ -24,27 +24,13 @@ from nerfstudio.utils.images import BasicImages
 from .eslam_config import ESLAMCameraConfig, ESLAMTrackingConfig
 
 @dataclass
-class ESLAMDataManagerConfig(VanillaDataManagerConfig):
-    """ESLAM DataManager Config
-
-    Add your custom datamanager config parameters here.
-    """
-    # "这个配置类是用来配置 ESLAMDataManager 的，当需要创建实例时，就使用 ESLAMDataManager 类" 
+class ESLAMDataManagerConfig(ParallelDataManagerConfig):
+    
     _target: Type = field(default_factory=lambda: ESLAMDataManager)
     
-    # Camera and tracking configurations
-    camera: ESLAMCameraConfig = field(default_factory=ESLAMCameraConfig)
-    tracking: ESLAMTrackingConfig = field(default_factory=ESLAMTrackingConfig)
 
-class ESLAMDataManager(VanillaDataManager):
-    """ESLAM DataManager
-
-    Args:
-        config: the DataManagerConfig used to instantiate class
-    """
+class ESLAMDataManager(ParallelDataManager, Generic[TDataset]):
     config: ESLAMDataManagerConfig
-    camera: ESLAMCameraConfig
-    tracking: ESLAMTrackingConfig
 
     def __init__(
         self,
@@ -58,51 +44,21 @@ class ESLAMDataManager(VanillaDataManager):
         super().__init__(
             config=config, device=device, test_mode=test_mode, world_size=world_size, local_rank=local_rank, **kwargs
         )
-        self.camera = config.camera
-        self.tracking = config.tracking
 
-    def setup_train(self):
-        """Setup the datamanager for training."""
-        super().setup_train()
-        # Additional setup for ESLAM training
-        self._setup_depth_processing()
+    def custom_ray_processor(
+        self, ray_bundle: RayBundle, batch: Dict
+    ) -> Tuple[RayBundle, Dict]:
+        """An API to add latents, metadata, or other further customization to the RayBundle dataloading process that is parallelized."""
+        # ray_indices = batch["indices"]
+        # batch["clip"], clip_scale = self.clip_interpolator(ray_indices)
+        # batch["dino"] = self.dino_dataloader(ray_indices)
+        # ray_bundle.metadata["clip_scales"] = clip_scale
 
-    def _setup_depth_processing(self):
-        """Setup depth processing parameters."""
-        if self.train_dataset is not None:
-            # Create masks for valid pixels
-            self.valid_pixels_mask = torch.ones((self.camera.H, self.camera.W), dtype=torch.bool, device=self.device)
-            if self.camera.crop_edge > 0:
-                self.valid_pixels_mask[:self.camera.crop_edge, :] = False
-                self.valid_pixels_mask[-self.camera.crop_edge:, :] = False
-                self.valid_pixels_mask[:, :self.camera.crop_edge] = False
-                self.valid_pixels_mask[:, -self.camera.crop_edge:] = False
-            
-            if self.tracking.ignore_edge_W > 0 or self.tracking.ignore_edge_H > 0:
-                self.valid_pixels_mask[:self.tracking.ignore_edge_H, :] = False
-                self.valid_pixels_mask[-self.tracking.ignore_edge_H:, :] = False
-                self.valid_pixels_mask[:, :self.tracking.ignore_edge_W] = False
-                self.valid_pixels_mask[:, -self.tracking.ignore_edge_W:] = False
-
-    def next_train(self, step: int) -> Tuple[RayBundle, Dict]:
-        """Returns the next batch of data from the train dataloader."""
-        self.train_count += 1
-        image_batch = next(self.iter_train_image_dataloader)
-        assert self.train_pixel_sampler is not None
-        assert isinstance(image_batch, dict)
-        
-        # Process depth data
-        if "depth" in image_batch:
-            image_batch["depth"] = image_batch["depth"] / self.camera.png_depth_scale
-        
-        # Apply valid pixels mask
-        if hasattr(self, 'valid_pixels_mask'):
-            image_batch["mask"] = self.valid_pixels_mask.unsqueeze(0)
-        
-        batch = self.train_pixel_sampler.sample(image_batch)
-        ray_indices = batch["indices"]
-        ray_bundle = self.train_ray_generator(ray_indices)
-        
+        # Assume all cameras have the same focal length and image dimensions.
+        ray_bundle.metadata["fx"] = self.train_dataset.cameras[0].fx.item()
+        ray_bundle.metadata["width"] = self.train_dataset.cameras[0].width.item()
+        ray_bundle.metadata["fy"] = self.train_dataset.cameras[0].fy.item()
+        ray_bundle.metadata["height"] = self.train_dataset.cameras[0].height.item()
         return ray_bundle, batch
 
     def get_train_rays_per_batch(self) -> int:

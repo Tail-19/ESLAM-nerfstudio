@@ -2,6 +2,6 @@ cull_replica_mesh
 *.zip
 output
 .idea
-Datasets
+data
 qsub*
 scripts/eval*
