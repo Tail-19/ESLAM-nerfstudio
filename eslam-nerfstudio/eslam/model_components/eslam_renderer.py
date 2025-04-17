@@ -1,20 +1,26 @@
 import torch
 import torch.nn as nn
 from renderer_iterator import RaySamplesDepthIterator
+from nerfstudio.fields.field_utils import FieldHeadNames
 class SDFRenderer(nn.Module):
         def __init__(self):
             super().__init__()
             
-        def render_batch_ray(self, ray_samples, sdf, beta):
-            sample_positions = (ray_samples.frustums.starts + ray_samples.frustums.ends) / 2
-            alpha = self.sdf2alpha(sdf[..., -1], beta)
+        def render_batch_ray(self, ray_samples, outputs, beta):
+            sample_positions = ray_samples.frustums.get_positions()
+            p_shape = sample_positions.shape
+            
+            raw = torch.cat([outputs[FieldHeadNames.RGB], outputs[FieldHeadNames.SDF].unsqueeze(-1)], dim=-1)
+            raw = raw.reshape(*p_shape[:-1], -1)
+            
+            alpha = self.sdf2alpha(raw[..., -1], beta)
             weights = alpha * torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1), ray_samples)
                                                     , (1. - alpha + 1e-10)], -1), -1)[:, :-1]
 
-            rendered_rgb = torch.sum(weights[..., None] * sdf[..., :3], -2)
+            rendered_rgb = torch.sum(weights[..., None] * raw[..., :3], -2)
             rendered_depth = torch.sum(weights * sample_positions, -1)
 
-            return rendered_depth, rendered_rgb, sdf[..., -1], sample_positions
+            return rendered_depth, rendered_rgb, raw[..., -1], sample_positions
     
         def sdf2alpha(self, sdf, beta=10):
             return 1. - torch.exp(-beta * torch.sigmoid(-sdf * beta))

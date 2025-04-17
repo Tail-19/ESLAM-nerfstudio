@@ -345,6 +345,7 @@ class Mapper(object):
                     device)-det_rays_o)/det_rays_d
                 t, _ = torch.min(torch.max(t, dim=2)[0], dim=1)
                 inside_mask = t >= batch_gt_depth
+            
             batch_rays_d = batch_rays_d[inside_mask]
             batch_rays_o = batch_rays_o[inside_mask]
             batch_gt_depth = batch_gt_depth[inside_mask]

@@ -157,7 +157,7 @@ class Renderer(object):
         pts = rays_o[..., None, :] + rays_d[..., None, :] * \
               z_vals[..., :, None]  # [n_rays, n_stratified+n_importance, 3]
 
-        raw = decoders(pts, all_planes)
+        raw = decoders(pts, all_planes) #这一行对应的就是ns中的field.get_output(ray_samples)
         alpha = self.sdf2alpha(raw[..., -1], decoders.beta)
         weights = alpha * torch.cumprod(torch.cat([torch.ones((alpha.shape[0], 1), device=device)
                                                 , (1. - alpha + 1e-10)], -1), -1)[:, :-1]

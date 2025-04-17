@@ -55,10 +55,6 @@ class ESLAMDataManager(ParallelDataManager, Generic[TDataset]):
         # ray_bundle.metadata["clip_scales"] = clip_scale
 
         # Assume all cameras have the same focal length and image dimensions.
-        ray_bundle.metadata["fx"] = self.train_dataset.cameras[0].fx.item()
-        ray_bundle.metadata["width"] = self.train_dataset.cameras[0].width.item()
-        ray_bundle.metadata["fy"] = self.train_dataset.cameras[0].fy.item()
-        ray_bundle.metadata["height"] = self.train_dataset.cameras[0].height.item()
         return ray_bundle, batch
 
     def get_train_rays_per_batch(self) -> int:
